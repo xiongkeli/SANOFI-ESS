@@ -52,14 +52,31 @@ const selectedMonths = ref(props.selectedMonth === 'all' ? [] :
 
 // 计算全选状态
 const allMonthsSelected = computed(() => {
-  return selectedMonths.value.length === props.months.length || selectedMonths.value.length === 0
+  return selectedMonths.value.length === props.months.length
+})
+
+// 计算是否没有选择任何月份
+const noMonthSelected = computed(() => {
+  return selectedMonths.value.length === 0
 })
 
 // 计算月份显示状态
 const monthDisplayText = computed(() => {
-  if (allMonthsSelected.value) return '全部月份'
+  if (noMonthSelected.value) return '全部月份'
   if (selectedMonths.value.length === 1) return selectedMonths.value[0]
+  if (allMonthsSelected.value) return '已全选'
   return `已选择${selectedMonths.value.length}个月份`
+})
+
+// 计算切换按钮文字
+const toggleButtonText = computed(() => {
+  if (allMonthsSelected.value) {
+    return '取消全选'
+  } else if (noMonthSelected.value) {
+    return '全选'
+  } else {
+    return '全选'
+  }
 })
 
 // Year改变
@@ -85,11 +102,11 @@ const onMonthChange = (month) => {
 
 // 全选/取消全选月份
 const toggleAllMonths = () => {
-  if (selectedMonths.value.length === 0 || selectedMonths.value.length === props.months.length) {
-    // 已全选或未选择任何月份，则反转状态
-    selectedMonths.value = allMonthsSelected.value ? [...props.months] : []
+  if (allMonthsSelected.value) {
+    // 如果已全选，则取消全选
+    selectedMonths.value = []
   } else {
-    // 部分选择，则全选
+    // 如果未全选或未选择任何月份，则全选
     selectedMonths.value = [...props.months]
   }
   
@@ -106,6 +123,22 @@ const onBrandChange = (event) => {
 // 会议取消状态改变
 const onCancellationChange = (event) => {
   emit('filter-changed', { type: 'cancellation', value: event.target.value })
+}
+
+// 全选月份
+const selectAllMonths = () => {
+  selectedMonths.value = [...props.months]
+  
+  // 发送更新事件
+  emit('filter-changed', { type: 'month', value: [...selectedMonths.value] })
+}
+
+// 取消全选月份
+const deselectAllMonths = () => {
+  selectedMonths.value = []
+  
+  // 发送更新事件
+  emit('filter-changed', { type: 'month', value: 'all' })
 }
 </script>
 
@@ -138,7 +171,7 @@ const onCancellationChange = (event) => {
           class="toggle-all-button" 
           @click="toggleAllMonths"
         >
-          {{ allMonthsSelected ? '全选' : '取消全选' }}
+          {{ toggleButtonText }}
         </button>
       </div>
       
@@ -149,6 +182,18 @@ const onCancellationChange = (event) => {
         </div>
         
         <div class="month-options">
+          <div class="action-buttons">
+            <button 
+              type="button" 
+              class="action-button select-all" 
+              @click="selectAllMonths"
+            >全选</button>
+            <button 
+              type="button" 
+              class="action-button deselect-all" 
+              @click="deselectAllMonths"
+            >全不选</button>
+          </div>
           <div 
             v-for="month in months" 
             :key="month" 
@@ -344,6 +389,36 @@ const onCancellationChange = (event) => {
   z-index: 10;
   margin-top: 4px;
   display: none;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px;
+  border-bottom: 1px solid #eee;
+}
+
+.action-button {
+  background-color: #f5f0f8;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 5px 8px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.action-button:hover {
+  background-color: #e9d5f5;
+  border-color: #8E44AD;
+}
+
+.select-all {
+  color: #8E44AD;
+}
+
+.deselect-all {
+  color: #666;
 }
 
 .month-dropdown:hover .month-options,
